@@ -7,42 +7,40 @@ import jwt_decode from "jwt-decode";
 import axios from "axios";
 import { BACKEND_URL, GOOGLE_CLIENT_ID } from "./backendURL";
 function App() {
+    const google = window.google;
     const [user, setUser] = useState({});
     const [token, setToken] = useState();
+    const [showError, setShowError] = useState(false);
     const handleCallbackResponse = (response) => {
-        console.log("JWT token", response.credential);
         var userObj = jwt_decode(response.credential);
         setToken(response.credential);
-        console.log(userObj);
         getUserData(userObj.email, response.credential);
-        document.getElementById("signInDiv").hidden = true;
+        document.getElementById("homepage").classList.add("invisible");
     };
     const getUserData = async (email, token) => {
         const url = `${BACKEND_URL}/get-user-details`;
-        console.log(url);
         const config = {
             headers: {
                 "Content-Type": "application/json",
+                token: token,
             },
             params: {
                 email: email,
-                token: token,
             },
         };
         try {
             const res = await axios.get(url, config);
             setUser(res.data.data[0]);
-            console.log(res.data);
         } catch (err) {
+            setShowError(true);
             console.log(err);
         }
     };
     const handleSignOut = (event) => {
         setUser({});
-        document.getElementById("signInDiv").hidden = false;
+        document.getElementById("homepage").classList.remove("invisible");
     };
     useEffect(() => {
-        /* global google */
         google.accounts.id.initialize({
             client_id: GOOGLE_CLIENT_ID,
             callback: handleCallbackResponse,
@@ -57,33 +55,47 @@ function App() {
         <div className="App">
             {Object.keys(user).length !== 0 && (
                 <>
-                    <div>
-                        {/* <img src={user.picture} alt="profile" /> */}
+                    {/* <div className="employee-details">
                         <p>Name : {user.employeeName}</p>
                         <p>Email : {user.email}</p>
                         <p>Employee ID : {user.employeeID}</p>
                         <p>Employment Type : {user.employmentType}</p>
                         <button onClick={handleSignOut}>Sign Out</button>
-                    </div>
+                    </div> */}
 
                     {/* <Link to="admin">Go to Admin Page</Link> */}
                     <Routes>
                         <Route
                             path="/"
                             element={
-                                <TimeSheetForm user={user} token={token} />
+                                <TimeSheetForm
+                                    user={user}
+                                    handleSignOut={handleSignOut}
+                                    token={token}
+                                />
                             }
                         />
                         {user.isAdmin && (
                             <Route
                                 path="admin"
-                                element={<AdminPage token={token} />}
+                                element={
+                                    <AdminPage
+                                        user={user}
+                                        handleSignOut={handleSignOut}
+                                        token={token}
+                                    />
+                                }
                             />
                         )}
                     </Routes>
                 </>
             )}
-            <div id="signInDiv"></div>
+            {showError && <h1>Access denied</h1>}
+            <div id="homepage">
+                <img src="/logo.jpg" alt="logo" />
+                <h1>Time Sheet Application</h1>
+                <div id="signInDiv"></div>
+            </div>
         </div>
     );
 }

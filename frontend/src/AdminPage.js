@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { BACKEND_URL } from "./backendURL";
-export default function AdminPage({ token }) {
+import EmployeeDetails from "./EmployeeDetails";
+export default function AdminPage({ token, user, handleSignOut }) {
     const [downloadDetails, setDownloadDetails] = useState({
         start: "",
         end: "",
@@ -23,11 +24,11 @@ export default function AdminPage({ token }) {
                 const config = {
                     headers: {
                         "Content-Type": "application/json",
+                        token: token,
                     },
-                    params: { ...downloadDetails, token },
+                    params: { ...downloadDetails },
                 };
                 const response = await axios.get(url, config);
-                console.log(response.data);
                 setTimeSheetData(response.data.data);
             } catch (err) {
                 console.log(err);
@@ -35,15 +36,15 @@ export default function AdminPage({ token }) {
         }
     };
     const downloadData = async () => {
-        console.log(downloadDetails);
         if (downloadDetails.start !== "" && downloadDetails.end !== "") {
             try {
                 const url = `${BACKEND_URL}/get-data`;
                 const config = {
                     headers: {
                         "Content-Type": "application/json",
+                        token: token,
                     },
-                    params: { ...downloadDetails, token },
+                    params: { ...downloadDetails },
                 };
                 const res = await axios.get(url, config);
                 // setTimeSheetData(res.data.data);
@@ -54,40 +55,42 @@ export default function AdminPage({ token }) {
                 link.href = jsonString;
                 link.download = "data.json";
                 link.click();
-                console.log(res.data);
             } catch (err) {
                 console.log(err);
             }
         }
     };
     return (
-        <div className="download-work-area">
-            <Link to="/">Go to form page</Link>
-            <p>Download work done in time period</p>
-            <div>
-                <p> Start Date</p>
-                <input
-                    name="start"
-                    type="date"
-                    value={downloadDetails.start}
-                    onChange={changeDownloadDetails}
-                />
-            </div>
+        <>
+            <EmployeeDetails user={user} handleSignOut={handleSignOut} />
+            <div className="download-work-area">
+                <Link to="/">Go to form page</Link>
+                <p>Download work done in time period</p>
+                <div>
+                    <p> Start Date</p>
+                    <input
+                        name="start"
+                        type="date"
+                        value={downloadDetails.start}
+                        onChange={changeDownloadDetails}
+                    />
+                </div>
 
-            <div>
-                <p> End Date</p>
-                <input
-                    name="end"
-                    type="date"
-                    value={downloadDetails.end}
-                    onChange={changeDownloadDetails}
-                />
+                <div>
+                    <p> End Date</p>
+                    <input
+                        name="end"
+                        type="date"
+                        value={downloadDetails.end}
+                        onChange={changeDownloadDetails}
+                    />
+                </div>
+                <button onClick={downloadData}>Download Data</button>
+                <button onClick={getEmployeeData}>Show absent employees</button>
+                {timeSheetData.map((d) => {
+                    return <p>{d.employeeName}</p>;
+                })}
             </div>
-            <button onClick={downloadData}>Download Data</button>
-            <button onClick={getEmployeeData}>Show absent employees</button>
-            {timeSheetData.map((d) => {
-                return <p>{d.employeeName}</p>;
-            })}
-        </div>
+        </>
     );
 }
